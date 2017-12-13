@@ -1,6 +1,20 @@
 package org.whispersystems.textsecuregcm.tests.controllers;
 
-import com.google.common.base.Optional;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.isA;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoMoreInteractions;
+import static org.mockito.Mockito.when;
+
+import java.util.HashMap;
+import java.util.concurrent.TimeUnit;
+
+import javax.ws.rs.client.Entity;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
+
 import org.apache.commons.codec.DecoderException;
 import org.apache.commons.codec.binary.Hex;
 import org.glassfish.jersey.test.grizzly.GrizzlyWebTestContainerFactory;
@@ -15,7 +29,6 @@ import org.whispersystems.textsecuregcm.entities.AccountAttributes;
 import org.whispersystems.textsecuregcm.limits.RateLimiter;
 import org.whispersystems.textsecuregcm.limits.RateLimiters;
 import org.whispersystems.textsecuregcm.providers.TimeProvider;
-import org.whispersystems.textsecuregcm.sms.SmsSender;
 import org.whispersystems.textsecuregcm.storage.Account;
 import org.whispersystems.textsecuregcm.storage.AccountsManager;
 import org.whispersystems.textsecuregcm.storage.MessagesManager;
@@ -23,16 +36,9 @@ import org.whispersystems.textsecuregcm.storage.PendingAccountsManager;
 import org.whispersystems.textsecuregcm.tests.util.AuthHelper;
 import org.whispersystems.textsecuregcm.util.SystemMapper;
 
-import javax.ws.rs.client.Entity;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-import java.util.HashMap;
-import java.util.concurrent.TimeUnit;
+import com.google.common.base.Optional;
 
 import io.dropwizard.testing.junit.ResourceTestRule;
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Matchers.anyString;
-import static org.mockito.Mockito.*;
 
 public class AccountControllerTest {
 
@@ -43,11 +49,9 @@ public class AccountControllerTest {
   private        AccountsManager        accountsManager        = mock(AccountsManager.class       );
   private        RateLimiters           rateLimiters           = mock(RateLimiters.class          );
   private        RateLimiter            rateLimiter            = mock(RateLimiter.class           );
-  private        SmsSender              smsSender              = mock(SmsSender.class             );
   private        MessagesManager        storedMessages         = mock(MessagesManager.class       );
   private        TimeProvider           timeProvider           = mock(TimeProvider.class          );
   private        TurnTokenGenerator     turnTokenGenerator     = mock(TurnTokenGenerator.class);
-  private static byte[]                 authorizationKey       = decodeHex("3a078586eea8971155f5c1ebd73c8c923cbec1c3ed22a54722e4e88321dc749f");
 
   @Rule
   public final ResourceTestRule resources = ResourceTestRule.builder()
@@ -58,10 +62,8 @@ public class AccountControllerTest {
                                                             .addResource(new AccountController(pendingAccountsManager,
                                                                                                accountsManager,
                                                                                                rateLimiters,
-                                                                                               smsSender,
                                                                                                storedMessages,
                                                                                                timeProvider,
-                                                                                               Optional.of(authorizationKey),
                                                                                                turnTokenGenerator,
                                                                                                new HashMap<String, Integer>()))
                                                             .build();
@@ -88,8 +90,6 @@ public class AccountControllerTest {
                  .get();
 
     assertThat(response.getStatus()).isEqualTo(200);
-
-    verify(smsSender).deliverSmsVerification(eq(SENDER), eq(Optional.<String>absent()), anyString());
   }
   
   @Test
@@ -102,8 +102,6 @@ public class AccountControllerTest {
                  .get();
 
     assertThat(response.getStatus()).isEqualTo(200);
-
-    verify(smsSender).deliverSmsVerification(eq(SENDER), eq(Optional.of("ios")), anyString());
   }
 
   @Test

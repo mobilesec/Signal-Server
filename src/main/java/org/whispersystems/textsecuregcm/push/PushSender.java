@@ -16,24 +16,23 @@
  */
 package org.whispersystems.textsecuregcm.push;
 
-import com.codahale.metrics.Gauge;
-import com.codahale.metrics.SharedMetricRegistries;
+import static com.codahale.metrics.MetricRegistry.name;
+
+import java.util.concurrent.TimeUnit;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.whispersystems.textsecuregcm.push.ApnFallbackManager.ApnFallbackTask;
+import org.whispersystems.textsecuregcm.entities.MessageProtos.Envelope;
 import org.whispersystems.textsecuregcm.push.WebsocketSender.DeliveryStatus;
 import org.whispersystems.textsecuregcm.storage.Account;
 import org.whispersystems.textsecuregcm.storage.Device;
 import org.whispersystems.textsecuregcm.util.BlockingThreadPoolExecutor;
 import org.whispersystems.textsecuregcm.util.Constants;
-import org.whispersystems.textsecuregcm.util.Util;
-import org.whispersystems.textsecuregcm.websocket.WebsocketAddress;
 
-import java.util.concurrent.TimeUnit;
+import com.codahale.metrics.Gauge;
+import com.codahale.metrics.SharedMetricRegistries;
 
-import static com.codahale.metrics.MetricRegistry.name;
 import io.dropwizard.lifecycle.Managed;
-import static org.whispersystems.textsecuregcm.entities.MessageProtos.Envelope;
 
 public class PushSender implements Managed {
 
@@ -41,20 +40,16 @@ public class PushSender implements Managed {
 
   public static final String APN_PAYLOAD = "{\"aps\":{\"sound\":\"default\",\"badge\":%d,\"alert\":{\"loc-key\":\"APN_Message\"}}}";
 
-  private final ApnFallbackManager         apnFallbackManager;
   private final GCMSender                  gcmSender;
-  private final APNSender                  apnSender;
   private final WebsocketSender            webSocketSender;
   private final BlockingThreadPoolExecutor executor;
   private final int                        queueSize;
 
-  public PushSender(ApnFallbackManager apnFallbackManager,
-                    GCMSender gcmSender, APNSender apnSender,
+  public PushSender(
+                    GCMSender gcmSender, 
                     WebsocketSender websocketSender, int queueSize)
   {
-    this.apnFallbackManager = apnFallbackManager;
     this.gcmSender          = gcmSender;
-    this.apnSender          = apnSender;
     this.webSocketSender    = websocketSender;
     this.queueSize          = queueSize;
     this.executor           = new BlockingThreadPoolExecutor(50, queueSize);
@@ -92,7 +87,6 @@ public class PushSender implements Managed {
       throws NotPushRegisteredException, TransientPushFailureException
   {
     if      (device.getGcmId() != null)    sendGcmNotification(account, device);
-    else if (device.getApnId() != null)    sendApnNotification(account, device, messageQueueDepth, fallback);
     else if (!device.getFetchesMessages()) throw new NotPushRegisteredException("No notification possible!");
   }
 
@@ -102,7 +96,6 @@ public class PushSender implements Managed {
 
   private void sendSynchronousMessage(Account account, Device device, Envelope message, boolean silent) {
     if      (device.getGcmId() != null)   sendGcmMessage(account, device, message);
-    else if (device.getApnId() != null)   sendApnMessage(account, device, message, silent);
     else if (device.getFetchesMessages()) sendWebSocketMessage(account, device, message);
     else                                  throw new AssertionError();
   }
@@ -122,40 +115,6 @@ public class PushSender implements Managed {
     gcmSender.sendMessage(gcmMessage);
   }
 
-  private void sendApnMessage(Account account, Device device, Envelope outgoingMessage, boolean silent) {
-    DeliveryStatus deliveryStatus = webSocketSender.sendMessage(account, device, outgoingMessage, WebsocketSender.Type.APN);
-
-    if (!deliveryStatus.isDelivered() && outgoingMessage.getType() != Envelope.Type.RECEIPT) {
-      boolean fallback = !silent && !outgoingMessage.getSource().equals(account.getNumber());
-      sendApnNotification(account, device, deliveryStatus.getMessageQueueDepth(), fallback);
-    }
-  }
-
-  private void sendApnNotification(Account account, Device device, int messageQueueDepth, boolean fallback) {
-    ApnMessage apnMessage;
-
-    if (!Util.isEmpty(device.getVoipApnId())) {
-      apnMessage = new ApnMessage(device.getVoipApnId(), account.getNumber(), (int)device.getId(),
-                                  String.format(APN_PAYLOAD, messageQueueDepth), true,
-                                  System.currentTimeMillis() + TimeUnit.SECONDS.toMillis(ApnFallbackManager.FALLBACK_DURATION));
-
-      if (fallback) {
-        apnFallbackManager.schedule(new WebsocketAddress(account.getNumber(), device.getId()),
-                                    new ApnFallbackTask(device.getApnId(), device.getVoipApnId(), apnMessage));
-      }
-    } else {
-      apnMessage = new ApnMessage(device.getApnId(), account.getNumber(), (int)device.getId(),
-                                  String.format(APN_PAYLOAD, messageQueueDepth),
-                                  false, ApnMessage.MAX_EXPIRATION);
-    }
-
-    try {
-      apnSender.sendMessage(apnMessage);
-    } catch (TransientPushFailureException e) {
-      logger.warn("SILENT PUSH LOSS", e);
-    }
-  }
-
   private void sendWebSocketMessage(Account account, Device device, Envelope outgoingMessage)
   {
     webSocketSender.sendMessage(account, device, outgoingMessage, WebsocketSender.Type.WEB);
@@ -163,7 +122,6 @@ public class PushSender implements Managed {
 
   @Override
   public void start() throws Exception {
-    apnSender.start();
     gcmSender.start();
   }
 
@@ -172,7 +130,6 @@ public class PushSender implements Managed {
     executor.shutdown();
     executor.awaitTermination(5, TimeUnit.MINUTES);
 
-    apnSender.stop();
     gcmSender.stop();
   }
 }

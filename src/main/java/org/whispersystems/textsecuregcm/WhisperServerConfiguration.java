@@ -16,8 +16,14 @@
  */
 package org.whispersystems.textsecuregcm;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-import org.whispersystems.textsecuregcm.configuration.ApnConfiguration;
+import java.util.HashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+
+import javax.validation.Valid;
+import javax.validation.constraints.NotNull;
+
 import org.whispersystems.textsecuregcm.configuration.FederationConfiguration;
 import org.whispersystems.textsecuregcm.configuration.GcmConfiguration;
 import org.whispersystems.textsecuregcm.configuration.MaxDeviceConfiguration;
@@ -26,18 +32,11 @@ import org.whispersystems.textsecuregcm.configuration.PushConfiguration;
 import org.whispersystems.textsecuregcm.configuration.RateLimitsConfiguration;
 import org.whispersystems.textsecuregcm.configuration.RedPhoneConfiguration;
 import org.whispersystems.textsecuregcm.configuration.RedisConfiguration;
-import org.whispersystems.textsecuregcm.configuration.AttachmentsConfiguration;
 import org.whispersystems.textsecuregcm.configuration.TestDeviceConfiguration;
 import org.whispersystems.textsecuregcm.configuration.TurnConfiguration;
-import org.whispersystems.textsecuregcm.configuration.TwilioConfiguration;
 import org.whispersystems.websocket.configuration.WebSocketConfiguration;
 
-import javax.validation.Valid;
-import javax.validation.constraints.NotNull;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 import io.dropwizard.Configuration;
 import io.dropwizard.client.JerseyClientConfiguration;
@@ -45,25 +44,11 @@ import io.dropwizard.db.DataSourceFactory;
 
 public class WhisperServerConfiguration extends Configuration {
 
-  @NotNull
-  @Valid
-  @JsonProperty
-  private TwilioConfiguration twilio;
 
   @NotNull
   @Valid
   @JsonProperty
   private PushConfiguration push;
-
-  @NotNull
-  @Valid
-  @JsonProperty
-  private AttachmentsConfiguration attachments;
-
-  @NotNull
-  @Valid
-  @JsonProperty
-  private ProfilesConfiguration profiles;
 
   @NotNull
   @Valid
@@ -130,17 +115,8 @@ public class WhisperServerConfiguration extends Configuration {
   @JsonProperty
   private GcmConfiguration gcm;
 
-  @Valid
-  @NotNull
-  @JsonProperty
-  private ApnConfiguration apn;
-
   public WebSocketConfiguration getWebSocketConfiguration() {
     return webSocket;
-  }
-
-  public TwilioConfiguration getTwilioConfiguration() {
-    return twilio;
   }
 
   public PushConfiguration getPushConfiguration() {
@@ -149,10 +125,6 @@ public class WhisperServerConfiguration extends Configuration {
 
   public JerseyClientConfiguration getJerseyClientConfiguration() {
     return httpClient;
-  }
-
-  public AttachmentsConfiguration getAttachmentsConfiguration() {
-    return attachments;
   }
 
   public RedisConfiguration getCacheConfiguration() {
@@ -183,24 +155,12 @@ public class WhisperServerConfiguration extends Configuration {
     return federation;
   }
 
-  public RedPhoneConfiguration getRedphoneConfiguration() {
-    return redphone;
-  }
-
   public TurnConfiguration getTurnConfiguration() {
     return turn;
   }
 
   public GcmConfiguration getGcmConfiguration() {
     return gcm;
-  }
-
-  public ApnConfiguration getApnConfiguration() {
-    return apn;
-  }
-
-  public ProfilesConfiguration getProfilesConfiguration() {
-    return profiles;
   }
 
   public Map<String, Integer> getTestDevices() {

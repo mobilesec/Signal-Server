@@ -41,9 +41,6 @@ public class ProfileControllerTest {
                                                                    .addProvider(new AuthValueFactoryProvider.Binder())
                                                                    .setMapper(SystemMapper.getMapper())
                                                                    .setTestContainerFactory(new GrizzlyWebTestContainerFactory())
-                                                                   .addResource(new ProfileController(rateLimiters,
-                                                                                                      accountsManager,
-                                                                                                      configuration))
                                                                    .build();
 
   @Before

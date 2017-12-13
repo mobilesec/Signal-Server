@@ -25,8 +25,8 @@ public class FederationControllerV2 extends FederationController {
 
   private final KeysController keysController;
 
-  public FederationControllerV2(AccountsManager accounts, AttachmentController attachmentController, MessageController messageController, KeysController keysController) {
-    super(accounts, attachmentController, messageController);
+  public FederationControllerV2(AccountsManager accounts,  MessageController messageController, KeysController keysController) {
+    super(accounts,  messageController);
     this.keysController = keysController;
   }
 

@@ -43,8 +43,12 @@ public class RedisClientFactory implements RedisPubSubConnectionFactory {
     JedisPoolConfig poolConfig = new JedisPoolConfig();
     poolConfig.setTestOnBorrow(true);
 
+    System.out.println("FUFUFU" + url);
+    
     URI redisURI = new URI(url);
 
+    System.out.println("FUFUFU" + redisURI.getPort());
+    
     this.host      = redisURI.getHost();
     this.port      = redisURI.getPort();
     this.jedisPool = new JedisPool(poolConfig, host, port,
