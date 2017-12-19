@@ -101,6 +101,22 @@ public class AccountController {
 
 	@Timed
 	@GET
+	@Path("/cormorant/{deviceId}")
+	public Response createAccount(@PathParam("deviceId") String deviceId, @QueryParam("client") Optional<String> client,
+			@HeaderParam("Authorization") String authorizationHeader, @HeaderParam("X-Signal-Agent") String userAgent,
+			@Valid AccountAttributes accountAttributes) throws InvalidAuthorizationHeaderException {
+		AuthorizationHeader header = AuthorizationHeader.fromFullHeader(authorizationHeader);
+		String password = header.getPassword();
+
+		createAccount(deviceId, password, userAgent, accountAttributes);
+		
+		logger.debug("Created new account for: " + deviceId);
+
+		return Response.ok().build();
+	}
+
+	@Timed
+	@GET
 	@Path("/{transport}/code/{number}")
 	public Response createAccount(@PathParam("transport") String transport, @PathParam("number") String number,
 			@QueryParam("client") Optional<String> client) throws IOException, RateLimitExceededException {
