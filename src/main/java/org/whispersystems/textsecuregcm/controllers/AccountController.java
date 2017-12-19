@@ -100,7 +100,7 @@ public class AccountController {
 	}
 
 	@Timed
-	@GET
+	@PUT
 	@Path("/cormorant/{deviceId}")
 	public Response createAccount(@PathParam("deviceId") String deviceId, @QueryParam("client") Optional<String> client,
 			@HeaderParam("Authorization") String authorizationHeader, @HeaderParam("X-Signal-Agent") String userAgent,
