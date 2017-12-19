@@ -33,42 +33,37 @@ import redis.clients.jedis.Protocol;
 
 public class RedisClientFactory implements RedisPubSubConnectionFactory {
 
-  private final Logger logger = LoggerFactory.getLogger(RedisClientFactory.class);
+	private final Logger logger = LoggerFactory.getLogger(RedisClientFactory.class);
 
-  private final String    host;
-  private final int       port;
-  private final JedisPool jedisPool;
+	private final String host;
+	private final int port;
+	private final JedisPool jedisPool;
 
-  public RedisClientFactory(String url) throws URISyntaxException {
-    JedisPoolConfig poolConfig = new JedisPoolConfig();
-    poolConfig.setTestOnBorrow(true);
+	public RedisClientFactory(String url) throws URISyntaxException {
+		JedisPoolConfig poolConfig = new JedisPoolConfig();
+		poolConfig.setTestOnBorrow(true);
 
-    System.out.println("FUFUFU" + url);
-    
-    URI redisURI = new URI(url);
+		URI redisURI = new URI(url);
 
-    System.out.println("FUFUFU" + redisURI.getPort());
-    
-    this.host      = redisURI.getHost();
-    this.port      = redisURI.getPort();
-    this.jedisPool = new JedisPool(poolConfig, host, port,
-                                   Protocol.DEFAULT_TIMEOUT, null);
-  }
+		this.host = redisURI.getHost();
+		this.port = redisURI.getPort();
+		this.jedisPool = new JedisPool(poolConfig, host, port, Protocol.DEFAULT_TIMEOUT, null);
+	}
 
-  public JedisPool getRedisClientPool() {
-    return jedisPool;
-  }
+	public JedisPool getRedisClientPool() {
+		return jedisPool;
+	}
 
-  @Override
-  public PubSubConnection connect() {
-    while (true) {
-      try {
-        Socket socket = new Socket(host, port);
-        return new PubSubConnection(socket);
-      } catch (IOException e) {
-        logger.warn("Error connecting", e);
-        Util.sleep(200);
-      }
-    }
-  }
+	@Override
+	public PubSubConnection connect() {
+		while (true) {
+			try {
+				Socket socket = new Socket(host, port);
+				return new PubSubConnection(socket);
+			} catch (IOException e) {
+				logger.warn("Error connecting", e);
+				Util.sleep(200);
+			}
+		}
+	}
 }
